@@ -1,0 +1,9 @@
+experiment: default
+model: xgboost
+params:
+  xgb:
+    n_estimators: 200
+    max_depth: 6
+  lgb:
+    num_leaves: 31
+    n_estimators: 200
