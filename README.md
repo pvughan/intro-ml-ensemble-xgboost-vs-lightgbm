@@ -1,59 +1,39 @@
 # Ensemble: XGBoost vs LightGBM — Baseline
 
-This repository is a baseline for the project **"Ensemble: XGBoost vs LightGBM"**.
-It follows the project specs:
-- Formulation: Yes
-- Method: Focused Comparative
-- Impact: No
-- Implement: API (a minimal Flask API is provided)
-- Evaluation: Yes (CV and holdout; metrics saved)
-- Ablation: Yes (hyperparameter sweep script)
+This repository provides a baseline for comparing XGBoost and LightGBM on tabular classification tasks.
+It includes:
 
-## Contents
-- `requirements.txt` — required Python packages
-- `config.yaml` — baseline config
-- `src/` — source code
-  - `data.py` — dataset loaders and preprocessing
-  - `models.py` — wrappers for XGBoost and LightGBM
-  - `train.py` — CLI script to train & save a model
-  - `evaluate.py` — evaluate a saved model / compute metrics
-  - `ablation.py` — run ablation studies (sweep hyperparameters)
-  - `api.py` — simple Flask API to train and predict
-  - `utils.py` — common utilities (logging/results)
-- `run_experiment.sh` — example run script
-- `results/` — outputs (created when running)
+- data loader for sklearn datasets (breast_cancer, iris, wine) and CSV
+- training script using model APIs
+- evaluation pipeline (cross-validation, metrics)
+- ablation script (grid/random search)
+- saving of model and results
 
-## Quick start (local)
-1. Create a virtualenv and install:
+## Quickstart
+
+1. Create environment and install:
+
 ```bash
 python -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate    # or .venv\Scripts\activate on Windows
 pip install -r requirements.txt
 ```
 
-2. Train baseline XGBoost on breast_cancer dataset (holdout):
+2. Run baseline training + evaluation:
+
 ```bash
-python src/train.py --model xgb --dataset breast_cancer --output results/xgb_baseline.joblib
+python src/training/train.py --dataset breast_cancer --model xgb --out_dir results/xgb_breast
+python src/training/train.py --dataset breast_cancer --model lgb --out_dir results/lgb_breast
 ```
 
-3. Evaluate:
+3. Run ablation (grid search example):
+
 ```bash
-python src/evaluate.py --model-path results/xgb_baseline.joblib --dataset breast_cancer
+python src/ablation/ablation_runner.py --dataset wine --algo both --mode grid --out_dir results/ablation_wine
 ```
 
-4. Run ablation (example):
-```bash
-python src/ablation.py --model xgb --dataset breast_cancer --out results/ablation_xgb.csv
-```
+4. Evaluate saved model:
 
-5. Run API (dev):
 ```bash
-python src/api.py
-# endpoints:
-# POST /train  -> JSON: {"model":"xgb","dataset":"breast_cancer"}
-# POST /predict -> JSON: {"model_path":"results/xgb_baseline.joblib","X":[[...],...]}
+python src/evaluation/evaluate.py --model_path results/xgb_breast/model.joblib --dataset breast_cancer
 ```
-
-## Notes
-- Datasets come from `sklearn.datasets` for reproducibility and simplicity (breast_cancer, wine, digits).
-- The baseline focuses on comparing XGBoost and LightGBM using the same preprocessing and evaluation pipeline.

@@ -1,8 +1,8 @@
-scikit-learn>=1.1.0
-xgboost>=1.6.0
-lightgbm>=3.3.0
-pandas
 numpy
-PyYAML
+pandas
+scikit-learn
+xgboost
+lightgbm
 joblib
-flask
+pyyaml
+tqdm
