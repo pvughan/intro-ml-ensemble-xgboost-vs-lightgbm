@@ -65,6 +65,14 @@ pip install -r requirements.txt
 
 ## 4. Run the Baseline
 
+#### Run the Notebook
+
+```bash
+jupyter notebook main.ipynb
+```
+
+#### Run the Python Script
+
 ```bash
 python main.py
 ```
