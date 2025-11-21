@@ -1,8 +1,4 @@
-numpy
-pandas
-scikit-learn
 xgboost
 lightgbm
-joblib
-pyyaml
-tqdm
+scikit-learn
+numpy

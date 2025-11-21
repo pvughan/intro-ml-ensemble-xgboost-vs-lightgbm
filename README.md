@@ -1,39 +1,119 @@
-# Ensemble: XGBoost vs LightGBM — Baseline
+# Focused Comparative Study: XGBoost vs LightGBM
 
-This repository provides a baseline for comparing XGBoost and LightGBM on tabular classification tasks.
-It includes:
+---
 
-- data loader for sklearn datasets (breast_cancer, iris, wine) and CSV
-- training script using model APIs
-- evaluation pipeline (cross-validation, metrics)
-- ablation script (grid/random search)
-- saving of model and results
+## 1. Introduction
 
-## Quickstart
+This project provides a complete baseline for conducting a **Focused Comparative Study** between **XGBoost** and **LightGBM** on a standard classification problem — the Breast Cancer dataset from scikit-learn.
 
-1. Create environment and install:
+Included components:
+
+- **Formulation** of the research problem
+- **Model implementation** using official APIs
+- **Evaluation** across multiple metrics
+- **Ablation study** analyzing hyperparameter sensitivity
+- **Structured modular codebase**
+- **Visualization** of comparative results
+
+This baseline can serve as a foundation for future benchmarking, extensions, or machine learning research projects.
+
+---
+
+## 2. Project Structure
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate    # or .venv\Scripts\activate on Windows
+project/
+│── data/
+│ └── load_data.py
+│
+│── src/
+│ ├── formulation/
+│ │ └── formulation.py
+│ │
+│ ├── models/
+│ │ ├── xgboost_model.py
+│ │ └── lightgbm_model.py
+│ │
+│ ├── evaluation/
+│ │ └── evaluate.py
+│ │
+│ └── ablation/
+│ └── ablation.py
+│
+│── main.py
+│── requirements.txt
+└── README.md
+```
+
+---
+
+## 3. Installation
+
+### Create environment
+
+```bash
+python -m venv venv
+source venv/bin/activate      # macOS/Linux
+venv\Scripts\activate         # Windows
+```
+
+### Install dependencies
+
+```bash
 pip install -r requirements.txt
 ```
 
-2. Run baseline training + evaluation:
+## 4. Run the Baseline
 
 ```bash
-python src/training/train.py --dataset breast_cancer --model xgb --out_dir results/xgb_breast
-python src/training/train.py --dataset breast_cancer --model lgb --out_dir results/lgb_breast
+python main.py
 ```
 
-3. Run ablation (grid search example):
+This runs:
 
-```bash
-python src/ablation/ablation_runner.py --dataset wine --algo both --mode grid --out_dir results/ablation_wine
-```
+1. Data loading
+2. Problem formulation
+3. XGBoost training
+4. LightGBM training
+5. Evaluation & comparisons
+6. Ablation study
+7. Visualization
 
-4. Evaluate saved model:
+## 5. Outputs
 
-```bash
-python src/evaluation/evaluate.py --model_path results/xgb_breast/model.joblib --dataset breast_cancer
-```
+1. Metrics Table
+
+- Accuracy
+- Precision
+- Recall
+- F1 Score
+
+2. Visual Charts
+
+- Performance comparison bar chart
+- Ablation line chart
+
+3. Text Summary
+
+- Which model performs better
+- Model stability under hyperparameter variations
+
+## 6. Module Breakdown
+
+`data/load_data.py`  
+Loads, scales, and splits the dataset.
+
+`src/formulation/formulation.py`  
+Defines the research hypothesis, evaluation criteria, and the comparison objective.
+
+`src/models/`  
+| File | Description |
+| ------------------- | ---------------------------- |
+| `xgboost_model.py` | XGBoost baseline classifier |
+| `lightgbm_model.py` | LightGBM baseline classifier |
+
+`src/evaluation/evaluate.py`  
+Computes metrics and plots comparison charts.
+
+`src/ablation/ablation.py`  
+Runs controlled ablation on `max_depth`.
