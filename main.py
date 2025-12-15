@@ -2,7 +2,7 @@ from data.loader import load_data
 from models.xgboost_model import get_xgboost_model
 from models.lightgbm_model import get_lightgbm_model
 from evaluation.evaluator import evaluate_model
-from ablation.ablation import run_ablation
+from evaluation.ablation import run_ablation
 from utils.metrics import print_metrics
 
 def main():
