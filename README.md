@@ -4,43 +4,44 @@
 
 ## 1. Introduction
 
-This project provides a complete baseline for conducting a **Focused Comparative Study** between **XGBoost** and **LightGBM** on a standard classification problem — the Breast Cancer dataset from scikit-learn.
+This project conducts a **focused comparative study** between two widely-used gradient boosting frameworks: **XGBoost** and **LightGBM**, under a controlled experimental setting.
 
-Included components:
+The objective is to analyze and compare their performance, stability, and sensitivity to hyperparameters on a standard binary classification task using the **Breast Cancer dataset** from scikit-learn.
 
-- **Formulation** of the research problem
-- **Model implementation** using official APIs
-- **Evaluation** across multiple metrics
-- **Ablation study** analyzing hyperparameter sensitivity
-- **Structured modular codebase**
-- **Visualization** of comparative results
-
-This baseline can serve as a foundation for future benchmarking, extensions, or machine learning research projects.
-
+Key components include:
+- Clear problem formulation and comparison objective
+- Model implementation using official APIs
+- Comprehensive evaluation using multiple performance metrics
+- Ablation study to analyze hyperparameter sensitivity
+- Structured and reusable codebase
+- Reproducible experimental results
 ---
 
 ## 2. Project Structure
 
 ```bash
-project/
-│── data/
-│ └── load_data.py
-│
+intro-ml-ensemble-xgboost-vs-lighgbm/
 │── src/
-│ ├── formulation/
-│ │ └── formulation.py
+│ ├── data/
+│ │ └── loader.py
 │ │
 │ ├── models/
 │ │ ├── xgboost_model.py
 │ │ └── lightgbm_model.py
 │ │
 │ ├── evaluation/
-│ │ └── evaluate.py
+│ │ ├── evaluator.py
+│ │ ├── run_evaluation.py
+│ │ ├── ablation.py
+│ │ └── run_ablation.py
 │ │
-│ └── ablation/
-│ └── ablation.py
+│ ├── utils/
+│ │ └── metrics.py
+│ │
+│ └── ablation_results.csv
 │
 │── main.py
+│── main.ipynb
 │── requirements.txt
 └── README.md
 ```
@@ -62,66 +63,111 @@ venv\Scripts\activate         # Windows
 ```bash
 pip install -r requirements.txt
 ```
+---
 
-## 4. Run the Baseline
+## 4. Run the Project
+This project provides **two execution entry points**, each serving a different purpose.
 
-#### Run the Notebook
+#### Option A: Notebook-based Execution (Exploration & Visualization)
+
+The notebook `main.ipynb` is intended for **interactive exploration**, **step-by-step execution**, and **visual inspection** of model behavior.
+
+It is useful for:
+- Understanding the training pipeline
+- Inspecting intermediate results
+- Demonstration and explanation during presentations
+
+Run the notebook using:
 
 ```bash
 jupyter notebook main.ipynb
 ```
 
-#### Run the Python Script
+#### Option B: Script-based Execution (Reproducible Evaluation)
+
+The script `main.py` runs the **entire pipeline end-to-end** in a fully reproducible manner and is intended to generate **final evaluation results** used in reporting.
+
+This includes:
+1.	Data loading and preprocessing
+2.	Training XGBoost and LightGBM models
+3.	Model evaluation across multiple metrics
+4.	Comparative analysis
+5.	Ablation study on selected hyperparameters
+
+Run the script using:
 
 ```bash
 python main.py
 ```
+---
 
-This runs:
+## 5. Evaluation
 
-1. Data loading
-2. Problem formulation
-3. XGBoost training
-4. LightGBM training
-5. Evaluation & comparisons
-6. Ablation study
-7. Visualization
-
-## 5. Outputs
-
-1. Metrics Table
-
+Model performance is evaluated using:
 - Accuracy
 - Precision
 - Recall
-- F1 Score
+- F1-score
+- ROC-AUC
 
-2. Visual Charts
+Results are presented via:
+- Metric tables
+- Comparison charts
+- Ablation plots
 
-- Performance comparison bar chart
-- Ablation line chart
+A short qualitative discussion is included to compare model stability.
 
-3. Text Summary
+---
 
-- Which model performs better
-- Model stability under hyperparameter variations
+## 6. Ablation Study
 
-## 6. Module Breakdown
+An ablation study is conducted to analyze model sensitivity with respect to key hyperparameters:
+- Learning rate
+- Number of estimators
 
-`data/load_data.py`  
-Loads, scales, and splits the dataset.
+Each model is trained under different hyperparameter configurations, and performance metrics are recorded for comparison.
 
-`src/formulation/formulation.py`  
-Defines the research hypothesis, evaluation criteria, and the comparison objective.
+The ablation results are saved to:
+`src/ablation_results.csv`
 
-`src/models/`  
+**Sample Ablation Output (format illustration)**
+
+| Model | learning_rate | n_estimators | Accuracy | F1 | ROC-AUC |
+|------|---------------|--------------|----------|----|---------|
+| XGBoost | 0.01 | 100 | 0.965 | 0.972 | 0.990 |
+| LightGBM | 0.10 | 300 | 0.965 | 0.972 | 0.992 |
+
+## 7. Module Breakdown
+
+### Data
+`src/data/loader.py`  
+Loads and preprocesses the Breast Cancer dataset.
+
+### Models
 | File | Description |
-| ------------------- | ---------------------------- |
-| `xgboost_model.py` | XGBoost baseline classifier |
-| `lightgbm_model.py` | LightGBM baseline classifier |
+|------|------------|
+| `xgboost_model.py` | XGBoost classifier wrapper |
+| `lightgbm_model.py` | LightGBM classifier wrapper |
 
-`src/evaluation/evaluate.py`  
-Computes metrics and plots comparison charts.
+### Evaluation
+`src/evaluation/evaluator.py`  
+Computes classification metrics.
 
-`src/ablation/ablation.py`  
-Runs controlled ablation on `max_depth`.
+`src/evaluation/run_evaluation.py`  
+Runs evaluation pipeline and prints metrics.
+
+### Ablation
+`src/evaluation/ablation.py`  
+Defines hyperparameter ablation logic.
+
+`src/evaluation/run_ablation.py`  
+Executes ablation experiments and saves results.
+
+## 8. Reproducibility
+
+To ensure reproducibility:
+- All experiments use fixed random seeds where applicable
+- The same data splits are shared across models
+- Hyperparameter search spaces are explicitly defined
+
+Running `main.py` will reproduce the reported evaluation results.
