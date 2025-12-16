@@ -1,4 +1,7 @@
 xgboost
 lightgbm
 scikit-learn
+matplotlib
+seaborn
+pandas
 numpy

@@ -11,10 +11,10 @@ The objective is to analyze and compare their performance, stability, and sensit
 Key components include:
 - Clear problem formulation and comparison objective
 - Model implementation using official APIs
-- Comprehensive evaluation using multiple performance metrics
-- Ablation study to analyze hyperparameter sensitivity
+- **Comprehensive evaluation using 5 different performance benchmarks**
+- **Systematic hyperparameter ablation study across multiple configurations**
 - Structured and reusable codebase
-- Reproducible experimental results
+- Reproducible experimental results with visualizations
 ---
 
 ## 2. Project Structure
@@ -33,12 +33,19 @@ intro-ml-ensemble-xgboost-vs-lighgbm/
 │ │ ├── evaluator.py
 │ │ ├── run_evaluation.py
 │ │ ├── ablation.py
-│ │ └── run_ablation.py
+│ │ ├── run_ablation.py
+│ │ └── visualize.py          # Benchmark visualization generator
 │ │
 │ ├── utils/
 │ │ └── metrics.py
 │ │
 │ └── ablation_results.csv
+│
+│── plots/                        # Benchmark visualization outputs
+│ ├── benchmark_all_metrics.png
+│ ├── benchmark_radar_chart.png
+│ ├── benchmark_heatmap.png
+│ └── benchmark_best_config.png
 │
 │── main.py
 │── main.ipynb
@@ -103,39 +110,73 @@ python main.py
 
 ## 5. Evaluation
 
-Model performance is evaluated using:
-- Accuracy
-- Precision
-- Recall
-- F1-score
-- ROC-AUC
+### Multiple Benchmark Metrics
+
+This project implements a **comprehensive multi-benchmark evaluation** to rigorously assess model performance. Both XGBoost and LightGBM are evaluated using **5 different performance benchmarks**:
+
+1. **Accuracy** - Overall classification correctness
+2. **Precision** - Positive prediction accuracy
+3. **Recall** - True positive detection rate
+4. **F1-score** - Harmonic mean of precision and recall
+5. **ROC-AUC** - Area under the receiver operating characteristic curve
+
+Each model is benchmarked across **multiple hyperparameter configurations** to ensure robust and comprehensive comparison.
+
+### Benchmark Visualization
+
+To generate visualization charts showcasing benchmark results:
+
+```bash
+python src/evaluation/visualize.py
+```
+
+This generates 4 comprehensive charts in the `plots/` directory:
+
+1. **Metrics Comparison Chart** - All 5 benchmarks across different hyperparameter settings
+2. **Radar Chart** - Average performance visualization across all benchmarks
+3. **Heatmap** - Hyperparameter sensitivity analysis for both models
+4. **Best Configuration** - Comparison of optimal settings for each model
 
 Results are presented via:
-- Metric tables
-- Comparison charts
-- Ablation plots
+- Detailed metric tables
+- Interactive comparison charts
+- Ablation study visualizations
+- Statistical performance summaries
 
-A short qualitative discussion is included to compare model stability.
+A qualitative discussion comparing model stability and hyperparameter sensitivity is included.
 
 ---
 
 ## 6. Ablation Study
 
-An ablation study is conducted to analyze model sensitivity with respect to key hyperparameters:
-- Learning rate
-- Number of estimators
+### Systematic Hyperparameter Benchmarking
 
-Each model is trained under different hyperparameter configurations, and performance metrics are recorded for comparison.
+A comprehensive ablation study is conducted to **benchmark both methods on different settings of hyperparameters**. This systematic approach evaluates model sensitivity and optimal configuration discovery.
 
-The ablation results are saved to:
+**Hyperparameter Search Space:**
+- **Learning rate**: [0.01, 0.1]
+- **Number of estimators**: [100, 300]
+
+**Total Benchmark Experiments:** 2 models × 4 hyperparameter configurations = **8 complete evaluations**
+
+Each configuration is evaluated using all 5 performance benchmarks (Accuracy, F1, Precision, Recall, ROC-AUC), providing a comprehensive 40-metric comparison matrix.
+
+The complete ablation results are saved to:  
 `src/ablation_results.csv`
 
-**Sample Ablation Output (format illustration)**
+**Sample Ablation Output (actual results)**
 
 | Model | learning_rate | n_estimators | Accuracy | F1 | ROC-AUC |
-|------|---------------|--------------|----------|----|---------|
-| XGBoost | 0.01 | 100 | 0.965 | 0.972 | 0.990 |
-| LightGBM | 0.10 | 300 | 0.965 | 0.972 | 0.992 |
+|---------|---------------|--------------|----------|--------|----------|
+| XGBoost | 0.01 | 100 | 0.9649 | 0.9722 | 0.9895 |
+| LightGBM| 0.01 | 100 | 0.9561 | 0.9655 | 0.9921 |
+| XGBoost | 0.10 | 300 | 0.9561 | 0.9650 | 0.9934 |
+| LightGBM| 0.10 | 300 | 0.9649 | 0.9722 | 0.9921 |
+
+This systematic benchmarking approach enables:
+- Identification of optimal hyperparameter configurations
+- Analysis of model stability across different settings
+- Fair comparison under controlled experimental conditions
 
 ## 7. Module Breakdown
 
@@ -156,12 +197,15 @@ Computes classification metrics.
 `src/evaluation/run_evaluation.py`  
 Runs evaluation pipeline and prints metrics.
 
-### Ablation
+### Ablation & Visualization
 `src/evaluation/ablation.py`  
-Defines hyperparameter ablation logic.
+Defines hyperparameter ablation logic and benchmark configurations.
 
 `src/evaluation/run_ablation.py`  
 Executes ablation experiments and saves results.
+
+`src/evaluation/visualize.py`  
+Generates comprehensive benchmark visualization charts across all metrics and hyperparameter settings.
 
 ## 8. Reproducibility
 
