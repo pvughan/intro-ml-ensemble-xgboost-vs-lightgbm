@@ -33,3 +33,6 @@ logs/
 # Environment files
 *.env
 .env
+
+# data
+data/

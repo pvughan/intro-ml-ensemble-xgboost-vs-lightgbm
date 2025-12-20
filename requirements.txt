@@ -5,3 +5,7 @@ matplotlib
 seaborn
 pandas
 numpy
+requests
+tqdm
+psutil
+openpyxl
