@@ -3,14 +3,28 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 
-def plot_benchmark_comparison(csv_path="ablation_results.csv", output_dir="plots"):
+def plot_benchmark_comparison(csv_path=None, output_dir="plots"):
     """
     Generate comprehensive benchmark comparison visualizations
+    
+    Args:
+        csv_path: Path to ablation_results.csv. If None, uses default location.
+        output_dir: Directory to save plots. Defaults to "plots".
     """
+    # Set default CSV path if not provided
+    if csv_path is None:
+        # Default: src/ablation_results.csv relative to project root
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        src_dir = os.path.dirname(script_dir)
+        csv_path = os.path.join(src_dir, "ablation_results.csv")
+    
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
     
     # Load results
+    if not os.path.exists(csv_path):
+        raise FileNotFoundError(f"Ablation results file not found: {csv_path}")
+    
     df = pd.read_csv(csv_path)
     
     # Set style
@@ -49,7 +63,7 @@ def plot_benchmark_comparison(csv_path="ablation_results.csv", output_dir="plots
     
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'benchmark_all_metrics.png'), dpi=300, bbox_inches='tight')
-    print(f"✓ Saved: {output_dir}/benchmark_all_metrics.png")
+    print(f"Saved: {output_dir}/benchmark_all_metrics.png")
     plt.close()
     
     # 2. Radar chart for model comparison (average across hyperparameters)
@@ -88,7 +102,7 @@ def plot_benchmark_comparison(csv_path="ablation_results.csv", output_dir="plots
     
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'benchmark_radar_chart.png'), dpi=300, bbox_inches='tight')
-    print(f"✓ Saved: {output_dir}/benchmark_radar_chart.png")
+    print(f"Saved: {output_dir}/benchmark_radar_chart.png")
     plt.close()
     
     # 3. Hyperparameter sensitivity heatmap
@@ -123,7 +137,7 @@ def plot_benchmark_comparison(csv_path="ablation_results.csv", output_dir="plots
     
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'benchmark_heatmap.png'), dpi=300, bbox_inches='tight')
-    print(f"✓ Saved: {output_dir}/benchmark_heatmap.png")
+    print(f"Saved: {output_dir}/benchmark_heatmap.png")
     plt.close()
     
     # 4. Best configuration comparison
@@ -167,17 +181,13 @@ def plot_benchmark_comparison(csv_path="ablation_results.csv", output_dir="plots
     
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'benchmark_best_config.png'), dpi=300, bbox_inches='tight')
-    print(f"✓ Saved: {output_dir}/benchmark_best_config.png")
+    print(f"Saved: {output_dir}/benchmark_best_config.png")
     plt.close()
     
-    print("\n✅ All benchmark visualizations generated successfully!")
+    print("\nAll benchmark visualizations generated successfully!")
     return best_configs
 
 if __name__ == "__main__":
-    # Run from project root or src/evaluation directory
-    import sys
-    if os.path.exists("src/ablation_results.csv"):
-        plot_benchmark_comparison("src/ablation_results.csv", "plots")
-    else:
-        plot_benchmark_comparison("../ablation_results.csv", "../../plots")
+    # Run from project root or any directory
+    plot_benchmark_comparison(output_dir="plots")
 

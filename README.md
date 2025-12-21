@@ -9,12 +9,24 @@ This project conducts a **focused comparative study** between two widely-used gr
 The objective is to analyze and compare their performance, stability, and sensitivity to hyperparameters on a standard binary classification task using the **Breast Cancer dataset** from scikit-learn.
 
 Key components include:
+
 - Clear problem formulation and comparison objective
 - Model implementation using official APIs
 - **Comprehensive evaluation using 5 different performance benchmarks**
 - **Systematic hyperparameter ablation study across multiple configurations**
 - Structured and reusable codebase
 - Reproducible experimental results with visualizations
+
+---
+
+## Problem formulation (explicit)
+
+We study **binary classification** with training data \(\{(x_i, y_i)\}_{i=1}^n\), where \(y_i \in \{0,1\}\). Both XGBoost and LightGBM learn an additive ensemble of decision trees (gradient boosting) by minimizing a regularized empirical risk.
+
+- **Objective (typical)**: logloss (binary cross-entropy)
+- **Prediction**: probability via a logistic link
+- **Comparison protocol**: same dataset split (fixed seed) and same evaluation metrics across models
+
 ---
 
 ## 2. Project Structure
@@ -31,10 +43,8 @@ intro-ml-ensemble-xgboost-vs-lighgbm/
 │ │
 │ ├── evaluation/
 │ │ ├── evaluator.py
-│ │ ├── run_evaluation.py
 │ │ ├── ablation.py
-│ │ ├── run_ablation.py
-│ │ └── visualize.py          # Benchmark visualization generator
+│ │ └── visualize.py
 │ │
 │ ├── utils/
 │ │ └── metrics.py
@@ -70,148 +80,67 @@ venv\Scripts\activate         # Windows
 ```bash
 pip install -r requirements.txt
 ```
+
 ---
 
 ## 4. Run the Project
-This project provides **two execution entry points**, each serving a different purpose.
 
-#### Option A: Notebook-based Execution (Exploration & Visualization)
+### Script-based Execution (Recommended)
 
-The notebook `main.ipynb` is intended for **interactive exploration**, **step-by-step execution**, and **visual inspection** of model behavior.
+Run the complete pipeline:
 
-It is useful for:
-- Understanding the training pipeline
-- Inspecting intermediate results
-- Demonstration and explanation during presentations
+```bash
+python main.py
+```
 
-Run the notebook using:
+This executes:
+1. Data loading and preprocessing
+2. Training XGBoost and LightGBM models
+3. Model evaluation across 5 metrics
+4. Ablation study on hyperparameters
+
+### Notebook-based Execution (Optional)
+
+For interactive exploration:
 
 ```bash
 jupyter notebook main.ipynb
 ```
 
-#### Option B: Script-based Execution (Reproducible Evaluation)
-
-The script `main.py` runs the **entire pipeline end-to-end** in a fully reproducible manner and is intended to generate **final evaluation results** used in reporting.
-
-This includes:
-1.	Data loading and preprocessing
-2.	Training XGBoost and LightGBM models
-3.	Model evaluation across multiple metrics
-4.	Comparative analysis
-5.	Ablation study on selected hyperparameters
-
-Run the script using:
-
-```bash
-python main.py
-```
 ---
 
 ## 5. Evaluation
 
-### Multiple Benchmark Metrics
+Both models are evaluated using **5 performance benchmarks**: Accuracy, Precision, Recall, F1-score, and ROC-AUC.
 
-This project implements a **comprehensive multi-benchmark evaluation** to rigorously assess model performance. Both XGBoost and LightGBM are evaluated using **5 different performance benchmarks**:
+### Visualization
 
-1. **Accuracy** - Overall classification correctness
-2. **Precision** - Positive prediction accuracy
-3. **Recall** - True positive detection rate
-4. **F1-score** - Harmonic mean of precision and recall
-5. **ROC-AUC** - Area under the receiver operating characteristic curve
-
-Each model is benchmarked across **multiple hyperparameter configurations** to ensure robust and comprehensive comparison.
-
-### Benchmark Visualization
-
-To generate visualization charts showcasing benchmark results:
+Generate benchmark charts:
 
 ```bash
 python src/evaluation/visualize.py
 ```
 
-This generates 4 comprehensive charts in the `plots/` directory:
-
-1. **Metrics Comparison Chart** - All 5 benchmarks across different hyperparameter settings
-2. **Radar Chart** - Average performance visualization across all benchmarks
-3. **Heatmap** - Hyperparameter sensitivity analysis for both models
-4. **Best Configuration** - Comparison of optimal settings for each model
-
-Results are presented via:
-- Detailed metric tables
-- Interactive comparison charts
-- Ablation study visualizations
-- Statistical performance summaries
-
-A qualitative discussion comparing model stability and hyperparameter sensitivity is included.
+This creates 4 charts in `plots/`:
+- Metrics comparison across hyperparameter settings
+- Radar chart for average performance
+- Heatmap for hyperparameter sensitivity
+- Best configuration comparison
 
 ---
 
 ## 6. Ablation Study
 
-### Systematic Hyperparameter Benchmarking
-
-A comprehensive ablation study is conducted to **benchmark both methods on different settings of hyperparameters**. This systematic approach evaluates model sensitivity and optimal configuration discovery.
+Systematic hyperparameter ablation study benchmarks both methods across different configurations.
 
 **Hyperparameter Search Space:**
-- **Learning rate**: [0.01, 0.1]
-- **Number of estimators**: [100, 300]
+- Learning rate: [0.01, 0.05, 0.1]
+- Number of estimators: [100, 300, 600]
+- Subsample: [0.8, 1.0]
+- Model-specific: max_depth/num_leaves, colsample_bytree
 
-**Total Benchmark Experiments:** 2 models × 4 hyperparameter configurations = **8 complete evaluations**
+Each configuration is evaluated using all 5 performance benchmarks. Results are saved to `src/ablation_results.csv`.
 
-Each configuration is evaluated using all 5 performance benchmarks (Accuracy, F1, Precision, Recall, ROC-AUC), providing a comprehensive 40-metric comparison matrix.
+## 7. Reproducibility
 
-The complete ablation results are saved to:  
-`src/ablation_results.csv`
-
-**Sample Ablation Output (actual results)**
-
-| Model | learning_rate | n_estimators | Accuracy | F1 | ROC-AUC |
-|---------|---------------|--------------|----------|--------|----------|
-| XGBoost | 0.01 | 100 | 0.9649 | 0.9722 | 0.9895 |
-| LightGBM| 0.01 | 100 | 0.9561 | 0.9655 | 0.9921 |
-| XGBoost | 0.10 | 300 | 0.9561 | 0.9650 | 0.9934 |
-| LightGBM| 0.10 | 300 | 0.9649 | 0.9722 | 0.9921 |
-
-This systematic benchmarking approach enables:
-- Identification of optimal hyperparameter configurations
-- Analysis of model stability across different settings
-- Fair comparison under controlled experimental conditions
-
-## 7. Module Breakdown
-
-### Data
-`src/data/loader.py`  
-Loads and preprocesses the Breast Cancer dataset.
-
-### Models
-| File | Description |
-|------|------------|
-| `xgboost_model.py` | XGBoost classifier wrapper |
-| `lightgbm_model.py` | LightGBM classifier wrapper |
-
-### Evaluation
-`src/evaluation/evaluator.py`  
-Computes classification metrics.
-
-`src/evaluation/run_evaluation.py`  
-Runs evaluation pipeline and prints metrics.
-
-### Ablation & Visualization
-`src/evaluation/ablation.py`  
-Defines hyperparameter ablation logic and benchmark configurations.
-
-`src/evaluation/run_ablation.py`  
-Executes ablation experiments and saves results.
-
-`src/evaluation/visualize.py`  
-Generates comprehensive benchmark visualization charts across all metrics and hyperparameter settings.
-
-## 8. Reproducibility
-
-To ensure reproducibility:
-- All experiments use fixed random seeds where applicable
-- The same data splits are shared across models
-- Hyperparameter search spaces are explicitly defined
-
-Running `main.py` will reproduce the reported evaluation results.
+All experiments use fixed random seeds and shared data splits. Running `main.py` will reproduce the reported evaluation results.
