@@ -1,193 +1,220 @@
+"""
+Enhanced visualization module with scalability analysis charts
+Generates plots for multi-dataset performance comparison
+"""
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import numpy as np
 import os
+from pathlib import Path
 
-def plot_benchmark_comparison(csv_path=None, output_dir="plots"):
+
+def plot_scalability_comparison(consolidated_csv="scalability_results.csv", output_dir="plots"):
     """
-    Generate comprehensive benchmark comparison visualizations
+    Generate scalability comparison visualizations across datasets
     
     Args:
-        csv_path: Path to ablation_results.csv. If None, uses default location.
-        output_dir: Directory to save plots. Defaults to "plots".
+        consolidated_csv: Path to consolidated results CSV
+        output_dir: Directory to save plots
     """
-    # Set default CSV path if not provided
-    if csv_path is None:
-        # Default: src/ablation_results.csv relative to project root
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        src_dir = os.path.dirname(script_dir)
-        csv_path = os.path.join(src_dir, "ablation_results.csv")
-    
-    # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
     
-    # Load results
-    if not os.path.exists(csv_path):
-        raise FileNotFoundError(f"Ablation results file not found: {csv_path}")
-    
-    df = pd.read_csv(csv_path)
+    # Load consolidated results
+    df = pd.read_csv(consolidated_csv)
     
     # Set style
     sns.set_style("whitegrid")
-    plt.rcParams['figure.figsize'] = (12, 8)
+    colors = {'XGBoost': '#FF6B6B', 'LightGBM': '#4ECDC4'}
     
-    # 1. Metrics comparison across all configurations
-    metrics_cols = ['accuracy', 'f1', 'precision', 'recall', 'roc_auc']
+    print("\n" + "="*80)
+    print("GENERATING SCALABILITY VISUALIZATIONS")
+    print("="*80 + "\n")
     
-    fig, axes = plt.subplots(2, 3, figsize=(18, 10))
-    axes = axes.flatten()
+    # 1. Training Time vs Dataset Size
+    fig, ax = plt.subplots(figsize=(12, 7))
     
-    for idx, metric in enumerate(metrics_cols):
-        ax = axes[idx]
-        
-        # Create grouped bar chart
-        df_pivot = df.pivot_table(
-            values=metric,
-            index=['learning_rate', 'n_estimators'],
-            columns='model'
-        )
-        
-        df_pivot.plot(kind='bar', ax=ax, width=0.8)
-        ax.set_title(f'{metric.upper()} - Hyperparameter Comparison', fontsize=12, fontweight='bold')
-        ax.set_xlabel('(Learning Rate, N Estimators)', fontsize=10)
-        ax.set_ylabel(metric.capitalize(), fontsize=10)
-        ax.legend(title='Model', loc='lower right')
-        ax.grid(axis='y', alpha=0.3)
-        
-        # Set x-tick labels
-        labels = [f"({lr}, {n})" for lr, n in df_pivot.index]
-        ax.set_xticklabels(labels, rotation=45, ha='right')
+    # Average training time by dataset and model
+    time_stats = df.groupby(['dataset', 'model', 'dataset_size'])['train_time_sec'].mean().reset_index()
     
-    # Remove extra subplot
-    fig.delaxes(axes[5])
+    for model in ['XGBoost', 'LightGBM']:
+        model_data = time_stats[time_stats['model'] == model]
+        ax.plot(model_data['dataset_size'], model_data['train_time_sec'], 
+                marker='o', linewidth=2.5, markersize=10, 
+                label=model, color=colors[model])
     
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'benchmark_all_metrics.png'), dpi=300, bbox_inches='tight')
-    print(f"Saved: {output_dir}/benchmark_all_metrics.png")
-    plt.close()
+    ax.set_xlabel('Dataset Size (samples)', fontsize=12, fontweight='bold')
+    ax.set_ylabel('Average Training Time (seconds)', fontsize=12, fontweight='bold')
+    ax.set_title('Training Time Scalability: XGBoost vs LightGBM', fontsize=14, fontweight='bold')
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.legend(fontsize=11)
+    ax.grid(True, alpha=0.3)
     
-    # 2. Radar chart for model comparison (average across hyperparameters)
-    fig, ax = plt.subplots(figsize=(10, 10), subplot_kw=dict(projection='polar'))
-    
-    # Calculate average metrics for each model
-    xgb_avg = df[df['model'] == 'XGBoost'][metrics_cols].mean()
-    lgbm_avg = df[df['model'] == 'LightGBM'][metrics_cols].mean()
-    
-    # Number of variables
-    categories = [m.upper() for m in metrics_cols]
-    N = len(categories)
-    
-    # Compute angle for each axis
-    angles = [n / float(N) * 2 * 3.14159 for n in range(N)]
-    angles += angles[:1]
-    
-    # Plot
-    xgb_values = xgb_avg.tolist()
-    xgb_values += xgb_values[:1]
-    ax.plot(angles, xgb_values, 'o-', linewidth=2, label='XGBoost', color='#FF6B6B')
-    ax.fill(angles, xgb_values, alpha=0.25, color='#FF6B6B')
-    
-    lgbm_values = lgbm_avg.tolist()
-    lgbm_values += lgbm_values[:1]
-    ax.plot(angles, lgbm_values, 'o-', linewidth=2, label='LightGBM', color='#4ECDC4')
-    ax.fill(angles, lgbm_values, alpha=0.25, color='#4ECDC4')
-    
-    # Fix axis to go in the right order
-    ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(categories, size=12)
-    ax.set_ylim(0.94, 1.0)
-    ax.set_title('Average Performance Across All Benchmarks', size=16, fontweight='bold', pad=20)
-    ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1), fontsize=12)
-    ax.grid(True)
+    # Add dataset labels
+    for dataset in df['dataset'].unique():
+        dataset_data = time_stats[time_stats['dataset'] == dataset].iloc[0]
+        ax.annotate(dataset, 
+                   xy=(dataset_data['dataset_size'], dataset_data['train_time_sec']),
+                   xytext=(10, 10), textcoords='offset points',
+                   fontsize=9, alpha=0.7)
     
     plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'benchmark_radar_chart.png'), dpi=300, bbox_inches='tight')
-    print(f"Saved: {output_dir}/benchmark_radar_chart.png")
+    plt.savefig(os.path.join(output_dir, 'scalability_training_time.png'), dpi=300, bbox_inches='tight')
+    print(f"✓ Saved: {output_dir}/scalability_training_time.png")
     plt.close()
     
-    # 3. Hyperparameter sensitivity heatmap
-    fig, axes = plt.subplots(1, 2, figsize=(16, 6))
-    
-    for idx, model in enumerate(['XGBoost', 'LightGBM']):
-        ax = axes[idx]
-        model_df = df[df['model'] == model]
-        
-        # Create pivot table for average scores across all metrics
-        avg_scores = []
-        for lr in model_df['learning_rate'].unique():
-            row_scores = []
-            for n_est in sorted(model_df['n_estimators'].unique()):
-                subset = model_df[(model_df['learning_rate'] == lr) & (model_df['n_estimators'] == n_est)]
-                avg_score = subset[metrics_cols].mean().mean()
-                row_scores.append(avg_score)
-            avg_scores.append(row_scores)
-        
-        # Create DataFrame for heatmap
-        heatmap_data = pd.DataFrame(
-            avg_scores,
-            index=sorted(model_df['learning_rate'].unique()),
-            columns=sorted(model_df['n_estimators'].unique())
-        )
-        
-        sns.heatmap(heatmap_data, annot=True, fmt='.4f', cmap='YlOrRd', 
-                    ax=ax, cbar_kws={'label': 'Avg Score'}, vmin=0.95, vmax=0.99)
-        ax.set_title(f'{model} - Hyperparameter Sensitivity', fontsize=14, fontweight='bold')
-        ax.set_xlabel('N Estimators', fontsize=12)
-        ax.set_ylabel('Learning Rate', fontsize=12)
-    
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'benchmark_heatmap.png'), dpi=300, bbox_inches='tight')
-    print(f"Saved: {output_dir}/benchmark_heatmap.png")
-    plt.close()
-    
-    # 4. Best configuration comparison
+    # 2. Memory Usage Comparison
     fig, ax = plt.subplots(figsize=(12, 6))
     
-    # Find best configuration for each model
-    xgb_best = df[df['model'] == 'XGBoost'].loc[df[df['model'] == 'XGBoost']['accuracy'].idxmax()]
-    lgbm_best = df[df['model'] == 'LightGBM'].loc[df[df['model'] == 'LightGBM']['accuracy'].idxmax()]
+    mem_stats = df.groupby(['dataset', 'model'])['memory_increase_mb'].mean().reset_index()
     
-    best_configs = pd.DataFrame([xgb_best, lgbm_best])
-    
-    x = range(len(metrics_cols))
+    datasets = mem_stats['dataset'].unique()
+    x = np.arange(len(datasets))
     width = 0.35
     
-    xgb_scores = [xgb_best[m] for m in metrics_cols]
-    lgbm_scores = [lgbm_best[m] for m in metrics_cols]
+    xgb_mem = [mem_stats[(mem_stats['dataset'] == d) & (mem_stats['model'] == 'XGBoost')]['memory_increase_mb'].values[0] 
+               for d in datasets]
+    lgbm_mem = [mem_stats[(mem_stats['dataset'] == d) & (mem_stats['model'] == 'LightGBM')]['memory_increase_mb'].values[0] 
+                for d in datasets]
     
-    bars1 = ax.bar([i - width/2 for i in x], xgb_scores, width, 
-                   label=f'XGBoost (lr={xgb_best["learning_rate"]}, n={int(xgb_best["n_estimators"])})',
-                   color='#FF6B6B', alpha=0.8)
-    bars2 = ax.bar([i + width/2 for i in x], lgbm_scores, width,
-                   label=f'LightGBM (lr={lgbm_best["learning_rate"]}, n={int(lgbm_best["n_estimators"])})',
-                   color='#4ECDC4', alpha=0.8)
+    bars1 = ax.bar(x - width/2, xgb_mem, width, label='XGBoost', color=colors['XGBoost'], alpha=0.8)
+    bars2 = ax.bar(x + width/2, lgbm_mem, width, label='LightGBM', color=colors['LightGBM'], alpha=0.8)
     
-    ax.set_xlabel('Metrics', fontsize=12, fontweight='bold')
-    ax.set_ylabel('Score', fontsize=12, fontweight='bold')
-    ax.set_title('Best Configuration Comparison', fontsize=14, fontweight='bold')
+    ax.set_xlabel('Dataset', fontsize=12, fontweight='bold')
+    ax.set_ylabel('Avg Memory Increase (MB)', fontsize=12, fontweight='bold')
+    ax.set_title('Memory Usage Comparison Across Datasets', fontsize=14, fontweight='bold')
     ax.set_xticks(x)
-    ax.set_xticklabels([m.upper() for m in metrics_cols])
-    ax.legend(fontsize=10)
-    ax.set_ylim(0.94, 1.0)
+    ax.set_xticklabels(datasets)
+    ax.legend(fontsize=11)
     ax.grid(axis='y', alpha=0.3)
     
-    # Add value labels on bars
+    # Add value labels
     for bars in [bars1, bars2]:
         for bar in bars:
             height = bar.get_height()
             ax.text(bar.get_x() + bar.get_width()/2., height,
-                   f'{height:.4f}',
-                   ha='center', va='bottom', fontsize=8)
+                   f'{height:.1f}',
+                   ha='center', va='bottom', fontsize=9)
     
     plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'benchmark_best_config.png'), dpi=300, bbox_inches='tight')
-    print(f"Saved: {output_dir}/benchmark_best_config.png")
+    plt.savefig(os.path.join(output_dir, 'scalability_memory_usage.png'), dpi=300, bbox_inches='tight')
+    print(f"✓ Saved: {output_dir}/scalability_memory_usage.png")
     plt.close()
     
-    print("\nAll benchmark visualizations generated successfully!")
-    return best_configs
+    # 3. Accuracy vs Dataset Scale
+    fig, ax = plt.subplots(figsize=(12, 7))
+    
+    acc_stats = df.groupby(['dataset', 'model', 'dataset_size'])['accuracy'].mean().reset_index()
+    
+    for model in ['XGBoost', 'LightGBM']:
+        model_data = acc_stats[acc_stats['model'] == model]
+        ax.plot(model_data['dataset_size'], model_data['accuracy'], 
+                marker='o', linewidth=2.5, markersize=10, 
+                label=model, color=colors[model])
+    
+    ax.set_xlabel('Dataset Size (samples)', fontsize=12, fontweight='bold')
+    ax.set_ylabel('Average Accuracy', fontsize=12, fontweight='bold')
+    ax.set_title('Accuracy Across Dataset Scales', fontsize=14, fontweight='bold')
+    ax.set_xscale('log')
+    ax.legend(fontsize=11)
+    ax.grid(True, alpha=0.3)
+    
+    # Add dataset labels
+    for dataset in df['dataset'].unique():
+        dataset_data = acc_stats[acc_stats['dataset'] == dataset].iloc[0]
+        ax.annotate(dataset, 
+                   xy=(dataset_data['dataset_size'], dataset_data['accuracy']),
+                   xytext=(10, -15), textcoords='offset points',
+                   fontsize=9, alpha=0.7)
+    
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, 'scalability_accuracy_trend.png'), dpi=300, bbox_inches='tight')
+    print(f"✓ Saved: {output_dir}/scalability_accuracy_trend.png")
+    plt.close()
+    
+    # 4. Speedup Factor Analysis
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
+    # Calculate speedup (XGBoost time / LightGBM time)
+    time_pivot = df.groupby(['dataset', 'model'])['train_time_sec'].mean().unstack()
+    
+    if 'XGBoost' in time_pivot.columns and 'LightGBM' in time_pivot.columns:
+        speedup = time_pivot['XGBoost'] / time_pivot['LightGBM']
+        
+        bars = ax.bar(range(len(speedup)), speedup.values, color='#95E1D3', alpha=0.8, edgecolor='black')
+        ax.axhline(y=1.0, color='red', linestyle='--', linewidth=2, label='No speedup (1.0x)')
+        
+        ax.set_xlabel('Dataset', fontsize=12, fontweight='bold')
+        ax.set_ylabel('Speedup Factor (XGBoost time / LightGBM time)', fontsize=12, fontweight='bold')
+        ax.set_title('LightGBM Speedup Over XGBoost', fontsize=14, fontweight='bold')
+        ax.set_xticks(range(len(speedup)))
+        ax.set_xticklabels(speedup.index)
+        ax.legend(fontsize=10)
+        ax.grid(axis='y', alpha=0.3)
+        
+        # Add value labels
+        for i, bar in enumerate(bars):
+            height = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width()/2., height,
+                   f'{height:.2f}x',
+                   ha='center', va='bottom', fontsize=10, fontweight='bold')
+        
+        plt.tight_layout()
+        plt.savefig(os.path.join(output_dir, 'scalability_speedup_factor.png'), dpi=300, bbox_inches='tight')
+        print(f"✓ Saved: {output_dir}/scalability_speedup_factor.png")
+        plt.close()
+    
+    print("\n✅ All scalability visualizations generated successfully!\n")
+
+
+def plot_single_dataset_benchmark(csv_path, dataset_name, output_dir="plots"):
+    """
+    Generate benchmark plots for a single dataset
+    (Original visualization function retained for backward compatibility)
+    """
+    os.makedirs(output_dir, exist_ok=True)
+    df = pd.read_csv(csv_path)
+    
+    if 'dataset' in df.columns:
+        df = df[df['dataset'] == dataset_name]
+    
+    metrics_cols = ['accuracy', 'f1', 'precision', 'recall', 'roc_auc']
+    
+    # Grouped bar chart for metrics
+    fig, ax = plt.subplots(figsize=(12, 6))
+    
+    xgb_avg = df[df['model'] == 'XGBoost'][metrics_cols].mean()
+    lgbm_avg = df[df['model'] == 'LightGBM'][metrics_cols].mean()
+    
+    x = np.arange(len(metrics_cols))
+    width = 0.35
+    
+    ax.bar(x - width/2, xgb_avg.values, width, label='XGBoost', color='#FF6B6B', alpha=0.8)
+    ax.bar(x + width/2, lgbm_avg.values, width, label='LightGBM', color='#4ECDC4', alpha=0.8)
+    
+    ax.set_xlabel('Metrics', fontsize=12, fontweight='bold')
+    ax.set_ylabel('Score', fontsize=12, fontweight='bold')
+    ax.set_title(f'Average Performance: {dataset_name}', fontsize=14, fontweight='bold')
+    ax.set_xticks(x)
+    ax.set_xticklabels([m.upper() for m in metrics_cols])
+    ax.legend()
+    ax.grid(axis='y', alpha=0.3)
+    
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, f'benchmark_{dataset_name}.png'), dpi=300, bbox_inches='tight')
+    print(f"✓ Saved: {output_dir}/benchmark_{dataset_name}.png")
+    plt.close()
+
 
 if __name__ == "__main__":
-    # Run from project root or any directory
-    plot_benchmark_comparison(output_dir="plots")
-
+    # Check for consolidated results
+    if os.path.exists("scalability_results.csv"):
+        plot_scalability_comparison("scalability_results.csv", "plots")
+    
+    # Also generate individual dataset plots if available
+    for csv_file in Path(".").glob("ablation_results_*.csv"):
+        dataset_name = csv_file.stem.replace("ablation_results_", "")
+        print(f"\nGenerating plots for {dataset_name}...")
+        plot_single_dataset_benchmark(str(csv_file), dataset_name, "plots")

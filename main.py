@@ -1,74 +1,100 @@
+"""
+Main entry point for XGBoost vs LightGBM comparison
+Updated to support multiple datasets for scalability analysis
+"""
+
 import sys
+from pathlib import Path
+
+# Add src directory to Python path
+sys.path.insert(0, str(Path(__file__).parent / 'src'))
+
 import argparse
-from src.data.loader import load_data
-from src.models.xgboost_model import get_xgboost_model
-from src.models.lightgbm_model import get_lightgbm_model
-from src.evaluation.evaluator import evaluate_model
-from src.evaluation.ablation import run_ablation
-from src.utils.metrics import print_metrics
+from data.loader import load_dataset, list_available_datasets, load_data
+from models.xgboost_model import get_xgboost_model
+from models.lightgbm_model import get_lightgbm_model
+from evaluation.evaluator import evaluate_model
+from evaluation.ablation import run_ablation, compare_models_summary
+from utils.metrics import print_metrics
 
 
-def main(seed: int = 42, skip_ablation: bool = False, scale: bool = False):
-    """Main execution function.
-
-    Args:
-        seed: Random seed for reproducibility.
-        skip_ablation: If True, skip the ablation study.
-        scale: If True, apply feature scaling.
-    """
-    try:
-        print("=" * 60)
-        print("XGBoost vs LightGBM Comparative Study")
-        print("=" * 60)
-        
-        # Load data
-        print("\n[1/3] Loading data...")
-        X_train, X_test, y_train, y_test = load_data(
-            random_state=seed, 
-            scale=scale
+def main():
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description='XGBoost vs LightGBM Comparison')
+    parser.add_argument(
+        '--dataset', 
+        type=str, 
+        default='breast_cancer',
+        choices=['breast_cancer', 'creditcard_fraud', 'higgs'],
+        help='Dataset to use for analysis (default: breast_cancer)'
+    )
+    parser.add_argument(
+        '--higgs-sample',
+        type=int,
+        default=None,
+        help='Sample size for HIGGS dataset (e.g., 100000)'
+    )
+    parser.add_argument(
+        '--list-datasets',
+        action='store_true',
+        help='List available datasets and exit'
+    )
+    
+    args = parser.parse_args()
+    
+    # List datasets and exit
+    if args.list_datasets:
+        list_available_datasets()
+        return
+    
+    # Load dataset
+    print(f"\n{'='*80}")
+    print(f"XGBoost vs LightGBM Comparison")
+    print(f"Dataset: {args.dataset}")
+    print(f"{'='*80}\n")
+    
+    if args.dataset == 'higgs' and args.higgs_sample:
+        X_train, X_test, y_train, y_test = load_dataset(
+            args.dataset,
+            sample_size=args.higgs_sample
         )
-        print(f"  Training set: {X_train.shape[0]} samples, {X_train.shape[1]} features")
-        print(f"  Test set: {X_test.shape[0]} samples")
+    else:
+        X_train, X_test, y_train, y_test = load_dataset(args.dataset)
+    
+    # Train and evaluate XGBoost
+    print("\n" + "-"*80)
+    print("Training XGBoost Baseline...")
+    print("-"*80)
+    xgb = get_xgboost_model()
+    xgb.fit(X_train, y_train)
+    xgb_results = evaluate_model(xgb, X_test, y_test)
+    print_metrics("XGBoost Baseline", xgb_results)
 
-        # Train and evaluate XGBoost
-        print("\n[2/3] Training and evaluating models...")
-        print("\n  Training XGBoost baseline...")
-        xgb = get_xgboost_model(random_state=seed, verbosity=0)
-        xgb.fit(X_train, y_train)
-        xgb_results = evaluate_model(xgb, X_test, y_test)
-        print_metrics("XGBoost Baseline", xgb_results)
+    # Train and evaluate LightGBM
+    print("\n" + "-"*80)
+    print("Training LightGBM Baseline...")
+    print("-"*80)
+    lgbm = get_lightgbm_model()
+    lgbm.fit(X_train, y_train)
+    lgbm_results = evaluate_model(lgbm, X_test, y_test)
+    print_metrics("LightGBM Baseline", lgbm_results)
 
-        # Train and evaluate LightGBM
-        print("\n  Training LightGBM baseline...")
-        lgbm = get_lightgbm_model(random_state=seed, verbosity=-1)
-        lgbm.fit(X_train, y_train)
-        lgbm_results = evaluate_model(lgbm, X_test, y_test)
-        print_metrics("LightGBM Baseline", lgbm_results)
-
-        # Ablation study
-        if not skip_ablation:
-            print("\n[3/3] Running ablation study...")
-            df = run_ablation(
-                X_train, X_test, y_train, y_test, 
-                random_state=seed,
-                verbose=True
-            )
-            print(f"\nSaved ablation table with {len(df)} rows.")
-        else:
-            print("\n[3/3] Skipping ablation study (--skip-ablation flag set)")
-
-        print("\n" + "=" * 60)
-        print("Execution complete!")
-        print("=" * 60)
-
-    except KeyboardInterrupt:
-        print("\n\nWarning: Execution interrupted by user")
-        sys.exit(1)
-    except Exception as e:
-        print(f"\nError: {str(e)}", file=sys.stderr)
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
+    # Run ablation study
+    print("\n" + "="*80)
+    print("Running Ablation Study...")
+    print("="*80)
+    df_results = run_ablation(X_train, X_test, y_train, y_test, dataset_name=args.dataset)
+    
+    # Print summary comparison
+    print("\n" + "="*80)
+    print("PERFORMANCE SUMMARY")
+    print("="*80 + "\n")
+    summary = compare_models_summary(df_results)
+    print(summary)
+    
+    print(f"\n{'='*80}")
+    print("✅ Analysis Complete!")
+    print(f"{'='*80}\n")
 
 
 if __name__ == "__main__":
