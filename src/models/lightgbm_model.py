@@ -7,19 +7,13 @@ def get_lightgbm_model(
     *, 
     random_state: int = 42, 
     n_jobs: int = -1,
-    verbosity: int = -1
+    verbosity: int = -1,
+    handle_imbalance: bool = False
 ) -> LGBMClassifier:
-    """Factory for a LightGBM classifier.
-
-    Args:
-        params: Optional hyperparameter dict to override defaults.
-        random_state: Seed for reproducibility.
-        n_jobs: Parallelism control (-1 for all cores).
-        verbosity: Verbosity level (-1=warning, 0=info, 1=debug).
-
-    Returns:
-        Configured LGBMClassifier instance.
     """
+    Factory for LightGBM classifier with optional imbalance handling.
+    """
+
     default_params = {
         "n_estimators": 200,
         "learning_rate": 0.1,
@@ -30,6 +24,10 @@ def get_lightgbm_model(
         "n_jobs": n_jobs,
         "verbosity": verbosity,
     }
+
+    if handle_imbalance:
+        default_params["is_unbalance"] = True
+        # alternative: default_params["class_weight"] = "balanced"
 
     if params:
         default_params.update(params)

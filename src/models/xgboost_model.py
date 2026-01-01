@@ -7,19 +7,13 @@ def get_xgboost_model(
     *, 
     random_state: int = 42, 
     n_jobs: int = -1,
-    verbosity: int = 0
+    verbosity: int = 0,
+    scale_pos_weight: Optional[float] = None
 ) -> XGBClassifier:
-    """Factory for an XGBoost classifier.
-
-    Args:
-        params: Optional hyperparameter dict to override defaults.
-        random_state: Seed for reproducibility.
-        n_jobs: Parallelism control (-1 for all cores).
-        verbosity: Verbosity level (0=silent, 1=warning, 2=info, 3=debug).
-
-    Returns:
-        Configured XGBClassifier instance.
     """
+    Factory for XGBoost classifier with optional class imbalance control.
+    """
+
     default_params = {
         "n_estimators": 200,
         "learning_rate": 0.1,
@@ -32,6 +26,9 @@ def get_xgboost_model(
         "eval_metric": "logloss",
         "use_label_encoder": False,
     }
+
+    if scale_pos_weight is not None:
+        default_params["scale_pos_weight"] = scale_pos_weight
 
     if params:
         default_params.update(params)
