@@ -98,25 +98,4 @@ def main():
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="XGBoost vs LightGBM Comparative Study"
-    )
-    parser.add_argument(
-        "--seed", 
-        type=int, 
-        default=42,
-        help="Random seed for reproducibility (default: 42)"
-    )
-    parser.add_argument(
-        "--skip-ablation",
-        action="store_true",
-        help="Skip the ablation study (faster execution)"
-    )
-    parser.add_argument(
-        "--scale",
-        action="store_true",
-        help="Apply StandardScaler to features"
-    )
-    
-    args = parser.parse_args()
-    main(seed=args.seed, skip_ablation=args.skip_ablation, scale=args.scale)
+    main()
